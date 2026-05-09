@@ -4,32 +4,77 @@ const HEALTHY_SPEED = 500 * 1024;
 const SLOW_TIME = 20 * 60 * 1000;
 const HEALTHY_TIME = 5 * 60 * 1000;
 
+const META_TIMEOUT = 5 * 60 * 1000;
+
 export function analyze(torrent, dbTorrent) {
 
   const now = Date.now();
 
-  // Slow Detection
-  if (torrent.dlspeed < SLOW_SPEED) {
+  // =========================
+  // METADATA FAILURE DETECTION
+  // =========================
 
-    if (!dbTorrent.slowSince) {
-      dbTorrent.slowSince = now;
+  if (torrent.state === "metaDL") {
+
+    if (!dbTorrent.metaSince) {
+      dbTorrent.metaSince = now;
     }
 
-    const slowDuration =
-      now - new Date(dbTorrent.slowSince).getTime();
+    const metaDuration =
+      now - new Date(
+        dbTorrent.metaSince
+      ).getTime();
 
     if (
-      slowDuration >= SLOW_TIME &&
-      !dbTorrent.isSlow
+      metaDuration >= META_TIMEOUT &&
+      !dbTorrent.metaFailed
     ) {
-      return "MOVE_BOTTOM";
+      return "META_FAILED";
     }
 
   } else {
-    dbTorrent.slowSince = null;
+
+    dbTorrent.metaSince = null;
   }
 
-  // Recovery Detection
+  // =========================
+  // SLOW DETECTION
+  // =========================
+
+  if (
+    torrent.state === "downloading" ||
+    torrent.state === "stalledDL"
+  ) {
+
+    if (torrent.dlspeed < SLOW_SPEED) {
+
+      if (!dbTorrent.slowSince) {
+        dbTorrent.slowSince = now;
+      }
+
+      const slowDuration =
+        now -
+        new Date(
+          dbTorrent.slowSince
+        ).getTime();
+
+      if (
+        slowDuration >= SLOW_TIME &&
+        !dbTorrent.isSlow
+      ) {
+        return "MOVE_BOTTOM";
+      }
+
+    } else {
+
+      dbTorrent.slowSince = null;
+    }
+  }
+
+  // =========================
+  // RECOVERY
+  // =========================
+
   if (
     dbTorrent.isSlow &&
     torrent.dlspeed > HEALTHY_SPEED
@@ -40,13 +85,19 @@ export function analyze(torrent, dbTorrent) {
     }
 
     const recoveryDuration =
-      now - new Date(dbTorrent.recoveredSince).getTime();
+      now -
+      new Date(
+        dbTorrent.recoveredSince
+      ).getTime();
 
-    if (recoveryDuration >= HEALTHY_TIME) {
+    if (
+      recoveryDuration >= HEALTHY_TIME
+    ) {
       return "RESTORE_PRIORITY";
     }
 
   } else {
+
     dbTorrent.recoveredSince = null;
   }
 

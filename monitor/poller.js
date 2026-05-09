@@ -50,10 +50,11 @@ export default async function startPoller() {
         }
 
         // Allowed states only
-        const allowedStates = [
-          "downloading",
-          "stalledDL"
-        ];
+       const allowedStates = [
+  "downloading",
+  "stalledDL",
+  "metaDL"
+];
 
         if (
           !allowedStates.includes(

@@ -16,9 +16,16 @@ const torrentSchema = new mongoose.Schema({
     default: false
   },
 
+  metaFailed: {
+    type: Boolean,
+    default: false
+  },
+
   slowSince: Date,
 
   recoveredSince: Date,
+
+  metaSince: Date,
 
   lastAction: String,
 

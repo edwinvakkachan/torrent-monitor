@@ -11,6 +11,10 @@ export async function executeAction(
 
   switch (action) {
 
+    // =========================
+    // SLOW TORRENT
+    // =========================
+
     case "MOVE_BOTTOM":
 
       try {
@@ -20,7 +24,7 @@ export async function executeAction(
         dbTorrent.isSlow = true;
 
         dbTorrent.lastAction =
-          "Moved to bottom";
+          "Moved to bottom (slow)";
 
         console.log(
           `[SLOW] ${torrent.name}`
@@ -35,6 +39,39 @@ export async function executeAction(
       }
 
       break;
+
+    // =========================
+    // METADATA FAILURE
+    // =========================
+
+    case "META_FAILED":
+
+      try {
+
+        await moveBottom(torrent.hash);
+
+        dbTorrent.metaFailed = true;
+
+        dbTorrent.lastAction =
+          "Moved to bottom (metadata failed)";
+
+        console.log(
+          `[META FAILED] ${torrent.name}`
+        );
+
+      } catch (err) {
+
+        console.error(
+          `Failed metadata action ${torrent.name}:`,
+          err.message
+        );
+      }
+
+      break;
+
+    // =========================
+    // RECOVERY
+    // =========================
 
     case "RESTORE_PRIORITY":
 
